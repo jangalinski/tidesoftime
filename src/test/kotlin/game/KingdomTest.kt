@@ -1,8 +1,8 @@
 package com.github.jangalinski.tidesoftime.game
 
-import com.github.jangalinski.tidesoftime.deck.Card.*
-import com.github.jangalinski.tidesoftime.deck.Symbol
-import com.github.jangalinski.tidesoftime.deck.Symbol.*
+import com.github.jangalinski.tidesoftime.Card.*
+import com.github.jangalinski.tidesoftime.Symbol
+import com.github.jangalinski.tidesoftime.Symbol.*
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.BeforeEach

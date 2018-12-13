@@ -1,7 +1,7 @@
 package com.github.jangalinski.tidesoftime.game
 
-import com.github.jangalinski.tidesoftime.deck.Card
-import com.github.jangalinski.tidesoftime.deck.CardFeature
+import com.github.jangalinski.tidesoftime.Card
+import com.github.jangalinski.tidesoftime.CardFeature
 
 fun countPoints(k1: Kingdom, k2: Kingdom): Pair<Result, Result> {
   //  assert(k1.size == k2.size)

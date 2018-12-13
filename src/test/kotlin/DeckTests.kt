@@ -1,16 +1,26 @@
-package com.github.jangalinski.tidesoftime.deck
+package com.github.jangalinski.tidesoftime
 
-import com.github.jangalinski.tidesoftime.deck.Card
-import com.github.jangalinski.tidesoftime.deck.Deck
-import com.github.jangalinski.tidesoftime.deck.Symbol
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.Test
 
-internal class DeckTest {
+internal class DeckTests {
 
   private var deck = Deck(shuffle = false)
+
+
+  @Test
+  internal fun name() = runBlocking {
+    val d = deck()
+    repeat(18) {
+      println(d.receive())
+    }
+    d.cancel()
+
+
+  }
 
   @Test
   internal fun `there are 18 cards in a new deck, 3 of each suit`() {

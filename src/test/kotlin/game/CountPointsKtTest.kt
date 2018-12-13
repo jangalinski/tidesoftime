@@ -1,6 +1,6 @@
 package com.github.jangalinski.tidesoftime.game
 
-import com.github.jangalinski.tidesoftime.deck.Card
+import com.github.jangalinski.tidesoftime.Card
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -66,7 +66,7 @@ internal class CountPointsKtTest {
 
   @Test
   internal fun `set scroll forest 5 points`() {
-    var (r1,r2) = countPoints(
+    var (r1,_) = countPoints(
         Kingdom()
             .add(Card.DIE_GROSSE_BIBLIOTHEK_VON_AHN)
             .add(Card.DER_GOLDENE_TEMPELTURM)

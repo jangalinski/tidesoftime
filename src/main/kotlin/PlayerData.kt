@@ -1,6 +1,5 @@
 package com.github.jangalinski.tidesoftime
 
-import com.github.jangalinski.tidesoftime.deck.Card
 import com.github.jangalinski.tidesoftime.game.Hand
 import com.github.jangalinski.tidesoftime.game.Kingdom
 

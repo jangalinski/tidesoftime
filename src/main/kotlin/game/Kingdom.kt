@@ -1,8 +1,8 @@
 package com.github.jangalinski.tidesoftime.game
 
-import com.github.jangalinski.tidesoftime.deck.Card
-import com.github.jangalinski.tidesoftime.deck.CardFeature
-import com.github.jangalinski.tidesoftime.deck.Symbol
+import com.github.jangalinski.tidesoftime.Card
+import com.github.jangalinski.tidesoftime.CardFeature
+import com.github.jangalinski.tidesoftime.Symbol
 
 
 data class Kingdom(

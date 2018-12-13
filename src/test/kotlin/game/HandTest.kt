@@ -1,6 +1,6 @@
 package com.github.jangalinski.tidesoftime.game
 
-import com.github.jangalinski.tidesoftime.deck.Card
+import com.github.jangalinski.tidesoftime.Card
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 

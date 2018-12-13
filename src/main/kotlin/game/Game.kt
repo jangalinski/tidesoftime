@@ -2,7 +2,7 @@ package com.github.jangalinski.tidesoftime.game
 
 import com.github.jangalinski.tidesoftime.Player
 import com.github.jangalinski.tidesoftime.PlayerData
-import com.github.jangalinski.tidesoftime.deck.Deck
+import com.github.jangalinski.tidesoftime.Deck
 
 data class Game(
     val player1: Player,

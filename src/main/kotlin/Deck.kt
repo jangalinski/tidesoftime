@@ -1,7 +1,25 @@
-package com.github.jangalinski.tidesoftime.deck
+package com.github.jangalinski.tidesoftime
 
-import com.github.jangalinski.tidesoftime.deck.CardFeature.*
-import com.github.jangalinski.tidesoftime.deck.Symbol.*
+import com.github.jangalinski.tidesoftime.CardFeature.*
+import com.github.jangalinski.tidesoftime.Symbol.*
+import kotlinx.coroutines.channels.produce
+import java.util.*
+
+data class Deck(
+    private val cards: Queue<Card>
+) {
+  constructor(shuffle: Boolean = true) : this(Card.ordered(), shuffle)
+  constructor(list: List<Card>, shuffle: Boolean = true) : this(
+      ArrayDeque(if (shuffle) list.shuffled() else list)
+  )
+
+  fun remaining() = cards.size
+  fun draw() = cards.remove()!!
+}
+
+fun GameScope.deck(cards : List<Card> = Card.shuffled()) = produce {
+  for (card in cards) send(card)
+}
 
 /**
  * A Deck in TidesOfTime has 18 cards.
@@ -16,6 +34,8 @@ enum class Card(
     val symbol: Symbol,
     val feature: CardFeature
 ) {
+
+
   // PER SYMBOL (5)
   DAS_BAD_DER_GOETTER(Forest, PointsPerSymbol(symbol = Tower)),
   DER_VORHOF(Hand, PointsPerSymbol(symbol = Crown)),
@@ -51,7 +71,14 @@ enum class Card(
 
   companion object {
     fun ordered() = Card.values().toList()
+    fun shuffled() = ordered().shuffled()
   }
+
+  override fun toString(): String {
+    return "$name($symbol)"
+  }
+
+
 }
 
 enum class Symbol {
