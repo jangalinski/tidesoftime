@@ -13,28 +13,48 @@ import kotlinx.coroutines.channels.actor
 typealias PlayerActor = SendChannel<PlayerMessage>
 
 sealed class PlayerMessage {
+  data class StartRound(val hand: Hand) : PlayerMessage()
+
   class DealCard(val card: Card, val size: CompletableDeferred<Int>) : PlayerMessage()
-  object PrintState : PlayerMessage()
   class ChooseCardToPlay(val hand: CompletableDeferred<Hand>) : PlayerMessage()
 
   class PassHand(val hand: Hand) : PlayerMessage()
+
+  data class PlayerStateQuery(val deferred: CompletableDeferred<PlayerState>) : PlayerMessage() {
+    companion object {
+      suspend fun sendTo(player: PlayerActor): CompletableDeferred<PlayerState> = with(CompletableDeferred<PlayerState>()){
+        player.send(PlayerStateQuery(this))
+        return this
+      }
+    }
+  }
+
 }
 
+data class PlayerState(
+  val remainingCardsInDeck: Set<Card> = Card.values().toSet(),
+  val discardedCards : Set<Card> = setOf(),
+  val myHand: Hand = Hand(),
+  val myKingdom: Kingdom = Kingdom(),
+  val otherHand: Hand = Hand(),
+  val otherKingdom: Kingdom = Kingdom()
+)
 
 @ObsoleteCoroutinesApi
 fun player(
     name: String,
     strategy: PlayerStrategy): PlayerActor = GlobalScope.actor {
 
+  var state = PlayerState()
+
   var hand = Hand()
   var kingdom = Kingdom()
 
   for (msg in channel) when (msg) {
 
-    is PrintState -> println("""Player: $name
-            Hand: $hand
-            Kingdom: $kingdom
-          """.trimMargin())
+    is StartRound -> state = state.copy(myHand = msg.hand)
+
+    is PlayerStateQuery -> msg.deferred.complete(state)
 
     is DealCard -> msg.apply {
       hand = hand.add(card)

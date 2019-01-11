@@ -2,7 +2,7 @@ package com.github.jangalinski.tidesoftime
 
 import com.github.jangalinski.tidesoftime.game.GameMessage
 import com.github.jangalinski.tidesoftime.game.game
-import com.github.jangalinski.tidesoftime.player.ConsoleSelectionStrategy
+import com.github.jangalinski.tidesoftime.player.PlayerMessage
 import com.github.jangalinski.tidesoftime.player.RandomCardSelection
 import com.github.jangalinski.tidesoftime.player.player
 import kotlinx.coroutines.CoroutineScope
@@ -19,18 +19,14 @@ fun main() = runBlocking<Unit> {
   val p2 = player("Uwe", RandomCardSelection)
 
   with(game(p1, p2)) {
-    send(GameMessage.Deal)
+    send(GameMessage.PlayRound)
 
-    send(GameMessage.PrintState)
+    GameMessage.GameStateQuery.sendTo(this).invokeOnCompletion { println("gamestate: $it") }
 
-    send(GameMessage.CardToKingdom)
-    send(GameMessage.CardToKingdom)
-    send(GameMessage.CardToKingdom)
-    send(GameMessage.CardToKingdom)
-    send(GameMessage.CardToKingdom)
-
-    send(GameMessage.PrintState)
-
-    close()
+    //close()
   }
+
+  PlayerMessage.PlayerStateQuery.sendTo(p1).invokeOnCompletion { println("p1: $it") }
+  PlayerMessage.PlayerStateQuery.sendTo(p2).await().let{ println("p2: $it") }
+
 }
