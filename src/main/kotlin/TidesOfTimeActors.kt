@@ -7,6 +7,7 @@ import com.github.jangalinski.tidesoftime.player.RandomCardSelection
 import com.github.jangalinski.tidesoftime.player.player
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
 
@@ -18,6 +19,13 @@ fun main() = runBlocking<Unit> {
   //val p1 = player("Heinz", ConsoleSelectionStrategy)
   val p2 = player("Uwe", RandomCardSelection)
 
+  val game = game(p1,p2)
+
+
+  game.send(GameMessage.PlayRound)
+
+
+  delay(2000)
   with(game(p1, p2)) {
     send(GameMessage.PlayRound)
 
