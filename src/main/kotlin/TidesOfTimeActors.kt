@@ -29,12 +29,25 @@ fun main() = runBlocking<Unit> {
   with(game(p1, p2)) {
     send(GameMessage.PlayRound)
 
-    GameMessage.GameStateQuery.sendTo(this).invokeOnCompletion { println("gamestate: $it") }
+    GameMessage.GameStateQuery.sendTo(this).await().let { println("gamestate: $it") }
 
+    send(GameMessage.CardToKingdom)
+    send(GameMessage.CardToKingdom)
+    send(GameMessage.CardToKingdom)
+    send(GameMessage.CardToKingdom)
+    send(GameMessage.CardToKingdom)
+    GameMessage.CountPoints.sendTo(this).await().let { println("""
+      # scoring #
+      p1: ${it.first}
+      p2: ${it.second}
+    """.trimIndent()) }
+
+
+    GameMessage.GameStateQuery.sendTo(this).await().let { println("gamestate: $it") }
     //close()
   }
 
-  PlayerMessage.PlayerStateQuery.sendTo(p1).invokeOnCompletion { println("p1: $it") }
+  PlayerMessage.PlayerStateQuery.sendTo(p1).await().let { println("p1: $it") }
   PlayerMessage.PlayerStateQuery.sendTo(p2).await().let{ println("p2: $it") }
 
 }
