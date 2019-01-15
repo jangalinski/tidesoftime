@@ -15,12 +15,12 @@ typealias GameActor = SendChannel<GameMessage>
 typealias Score = Pair<Int, Int>
 
 sealed class GameMessage {
-  object PrintState : GameMessage()
   object CardToKingdom : GameMessage()
   object PlayRound : GameMessage()
-  data class CountPoints(val deferred: CompletableDeferred<Pair<Int, Int>>) : GameMessage() {
+
+  data class CountPoints(val deferred: CompletableDeferred<Score>) : GameMessage() {
     companion object {
-      suspend fun sendTo(game: GameActor): CompletableDeferred<Pair<Int, Int>> = with(CompletableDeferred<Pair<Int, Int>>()){
+      suspend fun sendTo(game: GameActor): CompletableDeferred<Score> = with(CompletableDeferred<Score>()){
         game.send(CountPoints(this))
         return this
       }
@@ -37,37 +37,48 @@ sealed class GameMessage {
   }
 }
 
+data class PlayerData (val hand: Hand = Hand(), val kingdom: Kingdom = Kingdom()) {
+  fun deal(card: Card): PlayerData {
+    return copy(hand = hand.add(card))
+  }
+
+  fun playCard(cardOfPlayer: Card): PlayerData {
+    return copy(hand = hand.remove(card = cardOfPlayer), kingdom = kingdom.add(cardOfPlayer))
+  }
+
+  fun replaceHand(newHand: Hand) : PlayerData {
+    return copy(hand = newHand)
+  }
+}
+
 data class GameState(
-    val deck: DeckActor,
-    val handPlayer1: Hand = Hand(), val kingdomPlayer1: Kingdom = Kingdom(),
-    val handPlayer2: Hand = Hand(), val kingdomPlayer2: Kingdom = Kingdom(),
-    val points: Pair<Int, Int> = 0 to 0
+        val deck: DeckRef,
+        val player1: PlayerData = PlayerData(),
+        val player2: PlayerData = PlayerData(),
+        val points: Score = 0 to 0
 ) {
 
-  val handSize : Int by lazy {
-    arrayOf(handPlayer1, handPlayer2).map { it.size }.distinct().single()
+  private val handSize : Int by lazy {
+    arrayOf(player1.hand, player2.hand).map { it.size }.distinct().single()
   }
 
   suspend fun deal(): GameState {
     if(handSize == Hand.SIZE) {
       return this
     }
-    return copy(handPlayer1 = handPlayer1.add(deck.receive()), handPlayer2 = handPlayer2.add(deck.receive())).deal()
+    return copy(player1 = player1.deal(deck.receive()), player2 = player2.deal(deck.receive())).deal()
   }
 
-  fun playCards(cardOfPlayer1: Card, cardOfPlayer2: Card): GameState {
-    return copy(
-            handPlayer1 = handPlayer1.remove(cardOfPlayer1), kingdomPlayer1 = kingdomPlayer1.add(cardOfPlayer1),
-            handPlayer2 = handPlayer2.remove(cardOfPlayer2), kingdomPlayer2 = kingdomPlayer2.add(cardOfPlayer2)
-    )
+  fun playCard(cardOfPlayer1: Card, cardOfPlayer2: Card): GameState {
+    return copy(player1 = player1.playCard(cardOfPlayer1), player2 = player2.playCard(cardOfPlayer2))
   }
 
   fun swapHands(): GameState {
-    return copy(handPlayer1 = handPlayer1, handPlayer2 = handPlayer2)
+    return copy(player1 = player1.replaceHand(player2.hand), player2 = player2.replaceHand(player1.hand))
   }
 
   fun updateScore(): GameState {
-    val (r1, r2) = countPoints(kingdomPlayer1, kingdomPlayer2)
+    val (r1, r2) = countPoints(player1.kingdom, player2.kingdom)
 
     println("""
         updating score! adding following points to the score..
@@ -83,11 +94,7 @@ data class GameState(
 fun game(
     player1: PlayerActor,
     player2: PlayerActor,
-    deck: DeckActor = deckActor(true)): GameActor = GlobalScope.actor {
-
-  val players by lazy {
-    arrayOf(player1, player2)
-  }
+    deck: DeckRef = createDeck()): GameActor = GlobalScope.actor {
 
   var gameState = GameState(deck=deck)
 
@@ -99,10 +106,14 @@ fun game(
     }
 
     is GameMessage.CardToKingdom -> {
-      val cardOfPlayer1 = PlayerMessage.ChooseCardToPlay.sendTo(player1, gameState.handPlayer1, gameState.kingdomPlayer1, gameState.kingdomPlayer2).await()
-      val cardOfPlayer2 = PlayerMessage.ChooseCardToPlay.sendTo(player2, gameState.handPlayer2, gameState.kingdomPlayer2, gameState.kingdomPlayer1).await()
+      suspend fun retrieveCardToPlay(player: PlayerActor, playerData: PlayerData, otherPlayerKingdom: Kingdom): Card {
+        return PlayerMessage.ChooseCardToPlay.sendTo(player, playerData.hand, playerData.kingdom, otherPlayerKingdom).await()
+      }
 
-      gameState = gameState.let { it.playCards(cardOfPlayer1, cardOfPlayer2) } .let { it.swapHands() }
+      val cardOfPlayer1 = retrieveCardToPlay(player1, gameState.player1, gameState.player2.kingdom)
+      val cardOfPlayer2 = retrieveCardToPlay(player2, gameState.player2, gameState.player1.kingdom)
+
+      gameState = gameState.playCard(cardOfPlayer1, cardOfPlayer2).swapHands()
     }
 
     is GameMessage.CountPoints -> {
