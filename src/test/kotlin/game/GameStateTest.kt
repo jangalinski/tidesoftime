@@ -4,6 +4,7 @@ import com.github.jangalinski.tidesoftime.Card
 import com.github.jangalinski.tidesoftime.createDeck
 import com.github.jangalinski.tidesoftime.game.GameState
 import com.github.jangalinski.tidesoftime.game.Hand
+import com.github.jangalinski.tidesoftime.game.PlayerData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -21,5 +22,10 @@ internal class GameStateTest {
 
     assertThat(player1.hand).hasSize(Hand.SIZE)
     assertThat(player2.hand).hasSize(Hand.SIZE)
+
+    val (_, player1_2, player2_2) = gameState.copy(player1 = PlayerData(), player2 = PlayerData()).deal()
+
+    assertThat(player1_2.hand).hasSize(Hand.SIZE)
+    assertThat(player2_2.hand).hasSize(Hand.SIZE)
   }
 }

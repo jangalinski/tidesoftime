@@ -15,10 +15,29 @@ typealias PlayerActor = SendChannel<PlayerMessage>
 sealed class PlayerMessage {
 
   class DealCard(val card: Card, val size: CompletableDeferred<Int>) : PlayerMessage()
+
   data class ChooseCardToPlay(val ownHand: Hand, val ownKingdom: Kingdom, val otherKingdom: Kingdom, val cardToPlay: CompletableDeferred<Card>) : PlayerMessage() {
     companion object {
       suspend fun sendTo(player: PlayerActor, ownHand: Hand, ownKingdom: Kingdom, otherKingdom: Kingdom): CompletableDeferred<Card> = with(CompletableDeferred<Card>()){
         player.send(ChooseCardToPlay(ownHand, ownKingdom, otherKingdom, this))
+        return this
+      }
+    }
+  }
+
+  data class MarkRelicOfPast(val ownKingdom: Kingdom, val markedKingdomCard: CompletableDeferred<Card>) : PlayerMessage() {
+    companion object {
+      suspend fun sendTo(player: PlayerActor, ownKingdom: Kingdom): CompletableDeferred<Card> = with(CompletableDeferred<Card>()){
+        player.send(MarkRelicOfPast(ownKingdom, this))
+        return this
+      }
+    }
+  }
+
+  data class DestroyKingdomCard(val ownKingdom: Kingdom, val discardedCard: CompletableDeferred<Card>) : PlayerMessage() {
+    companion object {
+      suspend fun sendTo(player: PlayerActor, ownKingdom: Kingdom): CompletableDeferred<Card> = with(CompletableDeferred<Card>()){
+        player.send(DestroyKingdomCard(ownKingdom, this))
         return this
       }
     }
@@ -66,8 +85,18 @@ fun player(
       val cardToPlay = strategy.playHandCard(msg.ownHand)
       println("$name plays $cardToPlay")
       msg.cardToPlay.complete(cardToPlay)
+    }
 
-      //msg.other.sendBlocking(PassHand(hand))
+    is MarkRelicOfPast -> {
+      val markedKingdomCard = strategy.keepKingdomCard(msg.ownKingdom)
+      println("$name marks $markedKingdomCard as relic of the past")
+      msg.markedKingdomCard.complete(markedKingdomCard)
+    }
+
+    is DestroyKingdomCard -> {
+      val markedKingdomCard = strategy.destroyKingdomCard(msg.ownKingdom)
+      println("$name destroys $markedKingdomCard from his kingdom")
+      msg.discardedCard.complete(markedKingdomCard)
     }
 
 

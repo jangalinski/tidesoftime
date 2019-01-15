@@ -6,9 +6,7 @@ import com.github.jangalinski.tidesoftime.player.PlayerMessage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.actor
-
+import kotlinx.coroutines.channels.*
 
 typealias GameActor = SendChannel<GameMessage>
 
@@ -17,11 +15,14 @@ typealias Score = Pair<Int, Int>
 sealed class GameMessage {
   object CardToKingdom : GameMessage()
   object PlayRound : GameMessage()
+  object CountPoints : GameMessage()
 
-  data class CountPoints(val deferred: CompletableDeferred<Score>) : GameMessage() {
+  object RoundEnded : GameMessage()
+
+  data class GetScore(val deferred: CompletableDeferred<Score>) : GameMessage() {
     companion object {
       suspend fun sendTo(game: GameActor): CompletableDeferred<Score> = with(CompletableDeferred<Score>()){
-        game.send(CountPoints(this))
+        game.send(GetScore(this))
         return this
       }
     }
@@ -43,11 +44,24 @@ data class PlayerData (val hand: Hand = Hand(), val kingdom: Kingdom = Kingdom()
   }
 
   fun playCard(cardOfPlayer: Card): PlayerData {
+    assert(hand.contains(cardOfPlayer))
     return copy(hand = hand.remove(card = cardOfPlayer), kingdom = kingdom.add(cardOfPlayer))
   }
 
   fun replaceHand(newHand: Hand) : PlayerData {
     return copy(hand = newHand)
+  }
+
+  fun markRelicOfPast(card: Card): PlayerData {
+    return copy(kingdom = kingdom.mark(card))
+  }
+
+  fun destroyKingdomCard(card: Card): PlayerData {
+    return copy(kingdom = kingdom.remove(card))
+  }
+
+  fun kingdomToHand(): PlayerData {
+    return copy(kingdom = Kingdom(kingdom.marked().toSet()), hand = Hand(kingdom.unmarked().map { it.card }.toSet()))
   }
 }
 
@@ -66,11 +80,8 @@ data class GameState(
     if(handSize == Hand.SIZE) {
       return this
     }
-    return copy(player1 = player1.deal(deck.receive()), player2 = player2.deal(deck.receive())).deal()
-  }
 
-  fun playCard(cardOfPlayer1: Card, cardOfPlayer2: Card): GameState {
-    return copy(player1 = player1.playCard(cardOfPlayer1), player2 = player2.playCard(cardOfPlayer2))
+    return copy(player1 = player1.deal(deck.receive()), player2 = player2.deal(deck.receive())).deal()
   }
 
   fun swapHands(): GameState {
@@ -88,15 +99,18 @@ data class GameState(
 
     return copy(points = points.first + r1.sum to points.second + r2.sum)
   }
+
+  fun updatePlayer(newPlayerData1: PlayerData, newPlayerData2: PlayerData): GameState {
+    return copy(player1 = newPlayerData1, player2 = newPlayerData2)
+  }
 }
 
 @ObsoleteCoroutinesApi
 fun game(
     player1: PlayerActor,
-    player2: PlayerActor,
-    deck: DeckRef = createDeck()): GameActor = GlobalScope.actor {
+    player2: PlayerActor): GameActor = GlobalScope.actor {
 
-  var gameState = GameState(deck=deck)
+  var gameState = GameState(deck = createDeck(Card.shuffled()))
 
   for (msg in channel) when (msg) {
     is GameMessage.GameStateQuery -> msg.deferred.complete(gameState)
@@ -106,26 +120,40 @@ fun game(
     }
 
     is GameMessage.CardToKingdom -> {
-      suspend fun retrieveCardToPlay(player: PlayerActor, playerData: PlayerData, otherPlayerKingdom: Kingdom): Card {
-        return PlayerMessage.ChooseCardToPlay.sendTo(player, playerData.hand, playerData.kingdom, otherPlayerKingdom).await()
+      suspend fun playCard(player: PlayerActor, playerData: PlayerData, otherPlayerKingdom: Kingdom): PlayerData {
+        val card = PlayerMessage.ChooseCardToPlay.sendTo(player, playerData.hand, playerData.kingdom, otherPlayerKingdom).await()
+        return playerData.playCard(card)
       }
 
-      val cardOfPlayer1 = retrieveCardToPlay(player1, gameState.player1, gameState.player2.kingdom)
-      val cardOfPlayer2 = retrieveCardToPlay(player2, gameState.player2, gameState.player1.kingdom)
+      val newPlayerData1 = playCard(player1, gameState.player1, gameState.player2.kingdom)
+      val newPlayerData2 = playCard(player2, gameState.player2, gameState.player1.kingdom)
 
-      gameState = gameState.playCard(cardOfPlayer1, cardOfPlayer2).swapHands()
+      gameState = gameState.updatePlayer(newPlayerData1, newPlayerData2).swapHands()
     }
 
     is GameMessage.CountPoints -> {
       gameState = gameState.updateScore()
+    }
+
+    is GameMessage.RoundEnded -> {
+      suspend fun markRelicOfPast(player: PlayerActor, playerData: PlayerData): PlayerData {
+        val cardToMarkAsRelicOfPast = PlayerMessage.MarkRelicOfPast.sendTo(player, playerData.kingdom).await()
+        return playerData.markRelicOfPast(cardToMarkAsRelicOfPast)
+      }
+
+      suspend fun destroyKingdomCard(player: PlayerActor, playerData: PlayerData): PlayerData {
+        val cardToMarkAsRelicOfPast = PlayerMessage.DestroyKingdomCard.sendTo(player, playerData.kingdom).await()
+        return playerData.destroyKingdomCard(cardToMarkAsRelicOfPast)
+      }
+
+      val newPlayerData1 = destroyKingdomCard(player2, markRelicOfPast(player1, gameState.player1)).kingdomToHand()
+      val newPlayerData2 = destroyKingdomCard(player2, markRelicOfPast(player2, gameState.player2)).kingdomToHand()
+      gameState = gameState.updatePlayer(newPlayerData1, newPlayerData2)
+    }
+
+    is GameMessage.GetScore -> {
       msg.deferred.complete(gameState.points)
     }
   }
 
-}
-
-
-private suspend fun deal(p: PlayerActor, deck: Deck): CompletableDeferred<Int> = with(CompletableDeferred<Int>()) {
-  p.send(PlayerMessage.DealCard(deck.draw(), this))
-  return this
 }

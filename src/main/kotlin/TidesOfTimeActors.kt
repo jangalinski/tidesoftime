@@ -14,7 +14,7 @@ import kotlinx.coroutines.runBlocking
 typealias GameScope = CoroutineScope
 
 @ObsoleteCoroutinesApi
-fun main() = runBlocking<Unit> {
+fun main() = runBlocking {
   val p1 = player("Heinz", RandomCardSelection)
   //val p1 = player("Heinz", ConsoleSelectionStrategy)
   val p2 = player("Uwe", RandomCardSelection)
@@ -27,23 +27,33 @@ fun main() = runBlocking<Unit> {
 
   delay(2000)
   with(game(p1, p2)) {
+    // Round #1
     send(GameMessage.PlayRound)
-
     GameMessage.GameStateQuery.sendTo(this).await().let { println("gamestate: $it") }
+    repeat(5) { send(GameMessage.CardToKingdom) }
+    send(GameMessage.CountPoints)
+    send(GameMessage.RoundEnded)
 
-    send(GameMessage.CardToKingdom)
-    send(GameMessage.CardToKingdom)
-    send(GameMessage.CardToKingdom)
-    send(GameMessage.CardToKingdom)
-    send(GameMessage.CardToKingdom)
-    GameMessage.CountPoints.sendTo(this).await().let { println("""
+    // Round #2
+    send(GameMessage.PlayRound)
+    GameMessage.GameStateQuery.sendTo(this).await().let { println("gamestate: $it") }
+    repeat(5) { send(GameMessage.CardToKingdom) }
+    send(GameMessage.CountPoints)
+    send(GameMessage.RoundEnded)
+
+    // Round #3
+    send(GameMessage.PlayRound)
+    GameMessage.GameStateQuery.sendTo(this).await().let { println("gamestate: $it") }
+    repeat(5) { send(GameMessage.CardToKingdom) }
+    send(GameMessage.CountPoints)
+
+    // Round over
+    GameMessage.GameStateQuery.sendTo(this).await().let { println("gamestate: $it") }
+    GameMessage.GetScore.sendTo(this).await().let { println("""
       # scoring #
       p1: ${it.first}
       p2: ${it.second}
     """.trimIndent()) }
-
-
-    GameMessage.GameStateQuery.sendTo(this).await().let { println("gamestate: $it") }
     //close()
   }
 
