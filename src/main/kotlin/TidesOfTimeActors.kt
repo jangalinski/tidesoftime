@@ -6,6 +6,7 @@ import com.github.jangalinski.tidesoftime.player.RandomCardSelection
 import com.github.jangalinski.tidesoftime.player.getState
 import com.github.jangalinski.tidesoftime.player.player
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.consumeEach
 import kotlin.math.round
 
 
@@ -18,13 +19,7 @@ fun main() = runBlocking {
   //val p1 = player("Heinz", ConsoleSelectionStrategy)
   val p2 = player("Uwe", RandomCardSelection)
 
-  val game = game(p1,p2)
 
-
-  game.send(GameMessage.PlayRound)
-
-
-  delay(2000)
   with(game(p1, p2)) {
     // Round #1
     playRound()
@@ -54,6 +49,10 @@ fun main() = runBlocking {
       p2: ${it.second}
     """.trimIndent()) }
     //close()
+
+    var i = 0
+    getState().await().deck.consumeEach { i++ }
+    println("Cards on the deck remaining: $i")
   }
 
   p1.getState().await().let { println("p1 $it") }

@@ -26,7 +26,7 @@ suspend fun PlayerActor.markRelicOfPast(gameState: GameStateView): CompletableDe
   return deferred
 }
 
-suspend fun PlayerActor.destroyKindomCard(gameState: GameStateView): CompletableDeferred<Card> {
+suspend fun PlayerActor.destroyKingdomCard(gameState: GameStateView): CompletableDeferred<Card> {
   val deferred = CompletableDeferred<Card>()
   this.send(DestroyKingdomCard(gameState, deferred))
   return deferred
@@ -41,13 +41,9 @@ suspend fun PlayerActor.getState(): CompletableDeferred<PlayerState> {
 
 
 sealed class PlayerMessage {
-
   data class ChooseCardToPlay(val gameState: GameStateView, val cardToPlay: CompletableDeferred<Card>) : PlayerMessage()
-
   data class MarkRelicOfPast(val gameState: GameStateView, val markedKingdomCard: CompletableDeferred<Card>) : PlayerMessage()
-
   data class DestroyKingdomCard(val gameState: GameStateView, val discardedCard: CompletableDeferred<Card>) : PlayerMessage()
-
   data class PlayerStateQuery(val deferred: CompletableDeferred<PlayerState>) : PlayerMessage()
 }
 
@@ -63,7 +59,8 @@ data class PlayerState(
 @ObsoleteCoroutinesApi
 fun player(
     name: String,
-    strategy: PlayerStrategy): PlayerActor = GlobalScope.actor {
+    strategy: PlayerStrategy
+): PlayerActor = GlobalScope.actor {
 
   var state = PlayerState()
 
@@ -72,7 +69,7 @@ fun player(
 
     is ChooseCardToPlay -> {
       val cardToPlay = strategy.playHandCard(msg.gameState.own.hand)
-      println("$name plays $cardToPlay")
+      println("$name plays $cardToPlay (${msg.gameState.own.hand.size-1})")
       msg.cardToPlay.complete(cardToPlay)
     }
 
@@ -87,7 +84,5 @@ fun player(
       println("$name destroys $markedKingdomCard from his kingdom")
       msg.discardedCard.complete(markedKingdomCard)
     }
-
-
   }
 }
