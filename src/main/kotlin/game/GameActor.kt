@@ -3,7 +3,6 @@ package com.github.jangalinski.tidesoftime.game
 import com.github.jangalinski.tidesoftime.*
 import com.github.jangalinski.tidesoftime.player.*
 import game.GameState
-import game.Score
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -20,12 +19,6 @@ suspend fun GameActor.countPoints() = this.send(GameMessage.CountPoints)
 
 suspend fun GameActor.roundEnded() = this.send(GameMessage.RoundEnded)
 
-suspend fun GameActor.getScore(): CompletableDeferred<Score> {
-  val deferred = CompletableDeferred<Score>()
-  this.send(GameMessage.GetScore(deferred))
-  return deferred
-}
-
 suspend fun GameActor.getState(): CompletableDeferred<GameState> {
   val deferred = CompletableDeferred<GameState>()
   this.send(GameMessage.GameStateQuery(deferred))
@@ -38,7 +31,6 @@ sealed class GameMessage {
   object PlayRound : GameMessage()
   object CountPoints : GameMessage()
   object RoundEnded : GameMessage()
-  data class GetScore(val deferred: CompletableDeferred<Score>) : GameMessage()
   data class GameStateQuery(val deferred: CompletableDeferred<GameState>) : GameMessage()
 }
 
@@ -56,8 +48,9 @@ fun game(
 
   var state = GameState()
 
-  val deckRef = createDeck(Card.shuffled())
+  val deck = Card.shuffled().toMutableList()
 
+  val deckRef = createDeck(deck)
 
   suspend fun cardToKingdom(state: GameState)= state.updatePlayer(
           player1.chooseCardToPlay(state.visibleForPlayer1).await().let(state.player1::playCard),
@@ -77,8 +70,6 @@ fun game(
   for (msg in channel)
     state = when (msg) {
       is GameMessage.GameStateQuery -> state consume { msg.deferred.complete(it) }
-
-      is GameMessage.GetScore -> state consume { msg.deferred.complete(it.points) }
 
       is GameMessage.PlayRound -> state.deal(deckRef)
 

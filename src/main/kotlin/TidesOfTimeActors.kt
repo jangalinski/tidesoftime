@@ -42,9 +42,8 @@ fun main() = runBlocking {
     countPoints()
 
     // Round over
-    getState().await().let { println("gamestate: $it") }
-    getScore().await().let { println("""
-      # scoring #
+    getState().await().also { println("gamestate: $it") }.points.also { println("""
+      final score:
       p1: ${it.first}
       p2: ${it.second}
     """.trimIndent()) }

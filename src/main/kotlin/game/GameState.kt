@@ -1,11 +1,13 @@
 package game
 
 import com.github.jangalinski.tidesoftime.Card
+import com.github.jangalinski.tidesoftime.DeckMessage
 import com.github.jangalinski.tidesoftime.DeckRef
 import com.github.jangalinski.tidesoftime.deal
 import com.github.jangalinski.tidesoftime.game.Hand
 import com.github.jangalinski.tidesoftime.game.Kingdom
 import com.github.jangalinski.tidesoftime.game.countPoints
+import kotlinx.coroutines.channels.SendChannel
 
 typealias Score = Pair<Int, Int>
 
@@ -49,7 +51,7 @@ data class GameState(
         arrayOf(player1.hand, player2.hand).map { it.size }.distinct().single()
     }
 
-    suspend fun deal(dealer: DeckRef): GameState {
+    suspend fun deal(dealer: SendChannel<DeckMessage>): GameState {
         if(handSize == Hand.SIZE) {
             return this
         }
