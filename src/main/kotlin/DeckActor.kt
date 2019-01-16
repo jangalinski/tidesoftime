@@ -6,7 +6,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.channels.consumeEach
 
 
 sealed class DeckMessage {
@@ -16,24 +15,9 @@ sealed class DeckMessage {
 }
 
 typealias DeckRef = SendChannel<DeckMessage>
-
-suspend fun DeckRef.deal(): Card {
-  val deferred = CompletableDeferred<Card>()
-  this.send(DeckMessage.DealCard(deferred))
-  return deferred.await()
-}
-
-suspend fun DeckRef.size(): Int {
-  val deferred = CompletableDeferred<Int>()
-  this.send(DeckMessage.GetSize(deferred))
-  return deferred.await()
-}
-
-suspend fun DeckRef.remainingCards(): List<Card> {
-  val deferred = CompletableDeferred<List<Card>>()
-  this.send(DeckMessage.RemainingCards(deferred))
-  return deferred.await()
-}
+suspend fun DeckRef.deal(): Card = CompletableDeferred<Card>().also { this.send(DeckMessage.DealCard(it)) }.await()
+suspend fun DeckRef.size(): Int = CompletableDeferred<Int>().also { this.send(DeckMessage.GetSize(it)) }.await()
+suspend fun DeckRef.remainingCards(): List<Card> = CompletableDeferred<List<Card>>().also { this.send(DeckMessage.RemainingCards(it)) }.await()
 
 data class ImmutableDeck(val cards: List<Card>) {
   val size = cards.size
@@ -43,6 +27,11 @@ data class ImmutableDeck(val cards: List<Card>) {
   fun remaining() = cards
 }
 
+infix fun ImmutableDeck.readOnly(command: (ImmutableDeck) -> Unit): ImmutableDeck {
+  command(this)
+  return this
+
+}
 
 @ObsoleteCoroutinesApi
 @ExperimentalCoroutinesApi
@@ -50,23 +39,17 @@ fun createDeck(cards: List<Card> = Card.shuffled(), shuffle: Boolean = false): D
 
   var deck = ImmutableDeck(if (shuffle) cards.shuffled() else cards)
 
-  consumeEach {
-    deck = when (it) {
+  for (msg in channel) {
+    deck = when (msg) {
       is DeckMessage.DealCard -> {
         val (card, newDeck) = deck.deal()
-        it.deferred.complete(card)
+        msg.deferred.complete(card)
         newDeck
       }
 
-      is DeckMessage.GetSize -> {
-        it.deferred.complete(deck.size)
-        deck
-      }
+      is DeckMessage.GetSize -> deck readOnly { msg.deferred.complete(it.size) }
 
-      is DeckMessage.RemainingCards -> {
-        it.deferred.complete(deck.remaining())
-        deck
-      }
+      is DeckMessage.RemainingCards -> deck readOnly { msg.deferred.complete(deck.remaining()) }
     }
   }
 }

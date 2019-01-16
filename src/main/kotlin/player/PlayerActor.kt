@@ -13,32 +13,10 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 
 typealias PlayerActor = SendChannel<PlayerMessage>
-
-suspend fun PlayerActor.chooseCardToPlay(gameState: GameStateView): CompletableDeferred<Card> {
-  val deferred = CompletableDeferred<Card>()
-  this.send(ChooseCardToPlay(gameState, deferred))
-  return deferred
-}
-
-suspend fun PlayerActor.markRelicOfPast(gameState: GameStateView): CompletableDeferred<Card> {
-  val deferred = CompletableDeferred<Card>()
-  this.send(MarkRelicOfPast(gameState, deferred))
-  return deferred
-}
-
-suspend fun PlayerActor.destroyKingdomCard(gameState: GameStateView): CompletableDeferred<Card> {
-  val deferred = CompletableDeferred<Card>()
-  this.send(DestroyKingdomCard(gameState, deferred))
-  return deferred
-}
-
-suspend fun PlayerActor.getState(): CompletableDeferred<PlayerState> {
-  val deferred = CompletableDeferred<PlayerState>()
-  this.send(PlayerStateQuery(deferred))
-  return deferred
-
-}
-
+suspend fun PlayerActor.chooseCardToPlay(gameState: GameStateView): CompletableDeferred<Card>  = CompletableDeferred<Card>().also{this.send(ChooseCardToPlay(gameState, it))}
+suspend fun PlayerActor.markRelicOfPast(gameState: GameStateView): CompletableDeferred<Card>  = CompletableDeferred<Card>().also{this.send(MarkRelicOfPast(gameState, it))}
+suspend fun PlayerActor.destroyKingdomCard(gameState: GameStateView): CompletableDeferred<Card> = CompletableDeferred<Card>().also{this.send(DestroyKingdomCard(gameState, it))}
+suspend fun PlayerActor.getState(): CompletableDeferred<PlayerState>   = CompletableDeferred<PlayerState>().also{this.send(PlayerStateQuery(it))}
 
 sealed class PlayerMessage {
   data class ChooseCardToPlay(val gameState: GameStateView, val cardToPlay: CompletableDeferred<Card>) : PlayerMessage()

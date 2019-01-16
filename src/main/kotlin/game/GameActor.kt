@@ -9,23 +9,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.*
 
-typealias GameActor = SendChannel<GameMessage>
-
-suspend fun GameActor.cardToKingdom() = this.send(GameMessage.CardToKingdom)
-
-suspend fun GameActor.playRound()  = this.send(GameMessage.PlayRound)
-
-suspend fun GameActor.countPoints() = this.send(GameMessage.CountPoints)
-
-suspend fun GameActor.roundEnded() = this.send(GameMessage.RoundEnded)
-
-suspend fun GameActor.getState(): CompletableDeferred<GameState> {
-  val deferred = CompletableDeferred<GameState>()
-  this.send(GameMessage.GameStateQuery(deferred))
-  return deferred
-}
-
-
 sealed class GameMessage {
   object CardToKingdom : GameMessage()
   object PlayRound : GameMessage()
@@ -33,6 +16,13 @@ sealed class GameMessage {
   object RoundEnded : GameMessage()
   data class GameStateQuery(val deferred: CompletableDeferred<GameState>) : GameMessage()
 }
+
+typealias GameActor = SendChannel<GameMessage>
+suspend fun GameActor.cardToKingdom() = this.send(GameMessage.CardToKingdom)
+suspend fun GameActor.playRound()  = this.send(GameMessage.PlayRound)
+suspend fun GameActor.countPoints() = this.send(GameMessage.CountPoints)
+suspend fun GameActor.roundEnded() = this.send(GameMessage.RoundEnded)
+suspend fun GameActor.getState(): CompletableDeferred<GameState> = CompletableDeferred<GameState>().also { this.send(GameMessage.GameStateQuery(it)) }
 
 infix fun GameState.consume(command: (GameState) -> Any) : GameState {
   command(this)
