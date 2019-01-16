@@ -8,6 +8,10 @@ import kotlinx.coroutines.channels.produce
 
 typealias DeckRef = ReceiveChannel<Card>
 
+suspend fun DeckRef.deal(): Card {
+  return this.receive()
+}
+
 @ExperimentalCoroutinesApi
 suspend fun createDeck(cards: List<Card> = Card.shuffled(), shuffle: Boolean = false): DeckRef = GlobalScope.produce {
   fun cards(): List<Card> = if (shuffle) cards.shuffled() else cards
