@@ -42,6 +42,11 @@ sealed class GameMessage {
   data class GameStateQuery(val deferred: CompletableDeferred<GameState>) : GameMessage()
 }
 
+infix fun GameState.consume(command: (GameState) -> Any) : GameState {
+  command(this)
+  return this
+}
+
 @ObsoleteCoroutinesApi
 @ExperimentalCoroutinesApi
 fun game(
@@ -49,12 +54,14 @@ fun game(
     player2: PlayerActor
 ): GameActor = GlobalScope.actor {
 
-  var state = GameState(deck = createDeck(Card.shuffled()))
+  var state = GameState()
+
+  val deckRef = createDeck(Card.shuffled())
 
   suspend fun cardToKingdom(state: GameState)= state.updatePlayer(
           player1.chooseCardToPlay(state.visibleForPlayer1).await().let(state.player1::playCard),
           player2.chooseCardToPlay(state.visibleForPlayer2).await().let(state.player2::playCard)
-  ).swapHands()
+  )
 
   suspend fun markRelicOfPast(state: GameState)= state.updatePlayer(
           player1.markRelicOfPast(state.visibleForPlayer1).await().let(state.player1::markRelicOfPast),
@@ -66,33 +73,24 @@ fun game(
           player2.destroyKingdomCard(state.visibleForPlayer2).await().let(state.player2::destroyKingdomCard)
   )
 
-  fun kingdomToHand(state: GameState)= state.updatePlayer(
-          state.player1.kingdomToHand(),
-          state.player2.kingdomToHand()
-  )
+  for (msg in channel)
+    state = when (msg) {
+      is GameMessage.GameStateQuery -> state consume { msg.deferred.complete(it) }
 
+      is GameMessage.PlayRound -> state.deal(deckRef)
 
-  for (msg in channel) when (msg) {
-    is GameMessage.GameStateQuery -> msg.deferred.complete(state)
+      is GameMessage.CountPoints -> state.updateScore()
 
-    is GameMessage.PlayRound -> state = state.deal()
+      is GameMessage.GetScore -> state consume { msg.deferred.complete(it.points) }
 
-    is GameMessage.CountPoints -> state = state.updateScore()
-
-    is GameMessage.GetScore -> msg.deferred.complete(state.points)
-
-    is GameMessage.CardToKingdom -> {
-      state = state
+      is GameMessage.CardToKingdom -> state
               .let{ cardToKingdom(it) }
               .swapHands()
-    }
 
-    is GameMessage.RoundEnded -> {
-      state = state
+      is GameMessage.RoundEnded -> state
               .let { markRelicOfPast(it) }
               .let { destroyKingdomCard(it) }
-              .let { kingdomToHand(it) }
+              .takeCardsFromKingdomToHand()
     }
-  }
 
 }

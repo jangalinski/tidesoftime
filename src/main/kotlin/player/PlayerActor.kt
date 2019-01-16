@@ -69,7 +69,7 @@ fun player(
 
     is ChooseCardToPlay -> {
       val cardToPlay = strategy.playHandCard(msg.gameState.own.hand)
-      println("$name plays $cardToPlay (${msg.gameState.own.hand.size-1})")
+      println("${msg.gameState.own.hand.size}: $name plays $cardToPlay")
       msg.cardToPlay.complete(cardToPlay)
     }
 

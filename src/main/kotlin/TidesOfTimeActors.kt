@@ -49,10 +49,6 @@ fun main() = runBlocking {
       p2: ${it.second}
     """.trimIndent()) }
     //close()
-
-    var i = 0
-    getState().await().deck.consumeEach { i++ }
-    println("Cards on the deck remaining: $i")
   }
 
   p1.getState().await().let { println("p1 $it") }

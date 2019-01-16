@@ -7,7 +7,6 @@ import com.github.jangalinski.tidesoftime.game.Hand
 import com.github.jangalinski.tidesoftime.game.Kingdom
 import com.github.jangalinski.tidesoftime.game.countPoints
 
-
 typealias Score = Pair<Int, Int>
 
 data class ImmutablePlayerData (val hand: Hand = Hand(), val kingdom: Kingdom = Kingdom()) {
@@ -24,7 +23,7 @@ data class ImmutablePlayerData (val hand: Hand = Hand(), val kingdom: Kingdom = 
         return copy(kingdom = kingdom.remove(card))
     }
 
-    fun kingdomToHand() = copy(kingdom = Kingdom(kingdom.marked().toSet()), hand = Hand(kingdom.unmarked().map { it.card }.toSet()))
+    fun takeCardsFromKingdomToHand() = copy(kingdom = Kingdom(kingdom.marked().toSet()), hand = Hand(kingdom.unmarked().map { it.card }.toSet()))
 }
 
 data class GameStateView(
@@ -33,7 +32,6 @@ data class GameStateView(
 )
 
 data class GameState(
-        val deck: DeckRef,
         val player1: ImmutablePlayerData = ImmutablePlayerData(),
         val player2: ImmutablePlayerData = ImmutablePlayerData(),
         val points: Score = 0 to 0
@@ -51,15 +49,19 @@ data class GameState(
         arrayOf(player1.hand, player2.hand).map { it.size }.distinct().single()
     }
 
-    suspend fun deal(): GameState {
+    suspend fun deal(dealer: DeckRef): GameState {
         if(handSize == Hand.SIZE) {
             return this
         }
 
-        return copy(player1 = player1.deal(deck.deal()), player2 = player2.deal(deck.deal())).deal()
+        return copy(player1 = player1.deal(dealer.deal()), player2 = player2.deal(dealer.deal()))
+                .deal(dealer) // end recursive until every player has 5 cards on his hand
     }
 
     fun swapHands() = copy(player1 = player1.replaceHand(player2.hand), player2 = player2.replaceHand(player1.hand))
+
+    fun takeCardsFromKingdomToHand() = copy(player1 = player1.takeCardsFromKingdomToHand(), player2 = player2.takeCardsFromKingdomToHand())
+
 
     fun updateScore(): GameState {
         val (r1, r2) = countPoints(player1.kingdom, player2.kingdom)
