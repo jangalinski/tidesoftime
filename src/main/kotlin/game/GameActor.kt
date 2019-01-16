@@ -78,8 +78,8 @@ fun game(
     is GameMessage.CardToKingdom -> {
       state = state.updatePlayer(
               player1.chooseCardToPlay(state.visibleForPlayer1).await().let(state.player1::playCard),
-              player2.chooseCardToPlay(state.visibleForPlayer2).await().let(state.player1::playCard)
-      )
+              player2.chooseCardToPlay(state.visibleForPlayer2).await().let(state.player2::playCard)
+      ).swapHands()
     }
 
     is GameMessage.CountPoints -> {
@@ -89,7 +89,7 @@ fun game(
     is GameMessage.RoundEnded -> {
       state = state.updatePlayer(
               player1.markRelicOfPast(state.visibleForPlayer1).await().let(state.player1::markRelicOfPast),
-              player2.markRelicOfPast(state.visibleForPlayer2).await().let(state.player1::markRelicOfPast)
+              player2.markRelicOfPast(state.visibleForPlayer2).await().let(state.player2::markRelicOfPast)
       ).updatePlayer(
               player1.destroyKindomCard(state.visibleForPlayer1).await().let(state.player1::destroyKingdomCard),
               player2.destroyKindomCard(state.visibleForPlayer2).await().let(state.player2::destroyKingdomCard)
