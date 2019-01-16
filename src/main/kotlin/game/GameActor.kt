@@ -58,6 +58,7 @@ fun game(
 
   val deckRef = createDeck(Card.shuffled())
 
+
   suspend fun cardToKingdom(state: GameState)= state.updatePlayer(
           player1.chooseCardToPlay(state.visibleForPlayer1).await().let(state.player1::playCard),
           player2.chooseCardToPlay(state.visibleForPlayer2).await().let(state.player2::playCard)
@@ -77,11 +78,9 @@ fun game(
     state = when (msg) {
       is GameMessage.GameStateQuery -> state consume { msg.deferred.complete(it) }
 
-      is GameMessage.PlayRound -> state.deal(deckRef)
-
-      is GameMessage.CountPoints -> state.updateScore()
-
       is GameMessage.GetScore -> state consume { msg.deferred.complete(it.points) }
+
+      is GameMessage.PlayRound -> state.deal(deckRef)
 
       is GameMessage.CardToKingdom -> state
               .let{ cardToKingdom(it) }
@@ -91,6 +90,7 @@ fun game(
               .let { markRelicOfPast(it) }
               .let { destroyKingdomCard(it) }
               .takeCardsFromKingdomToHand()
-    }
 
+      is GameMessage.CountPoints -> state.updateScore()
+    }
 }
