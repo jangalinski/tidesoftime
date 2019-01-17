@@ -21,6 +21,7 @@ class TestDirectContext : CoroutineDispatcher(), Delay {
 @ExperimentalCoroutinesApi
 @ObsoleteCoroutinesApi
 class DeckActorTest {
+
     @Test
     internal fun `initialize deck`() {
         // GIVEN
@@ -28,7 +29,7 @@ class DeckActorTest {
         val deck = createDeck(cards)
 
         // WHEN
-        val (remainingCards, size) = runBlocking(TestDirectContext()) {
+        val (remainingCards, size) = runBlocking {
             deck.remainingCards() to deck.size()
         }
 
@@ -44,7 +45,7 @@ class DeckActorTest {
 
         val deck = createDeck(cards)
 
-        val (card, remainingCards, size) = runBlocking(TestDirectContext()) {
+        val (card, remainingCards, size) = runBlocking {
             Triple(deck.deal(), deck.remainingCards(), deck.size())
         }
 

@@ -2,7 +2,6 @@ package game
 
 import com.github.jangalinski.tidesoftime.Card
 import com.github.jangalinski.tidesoftime.DeckMessage
-import com.github.jangalinski.tidesoftime.DeckRef
 import com.github.jangalinski.tidesoftime.deal
 import com.github.jangalinski.tidesoftime.game.Hand
 import com.github.jangalinski.tidesoftime.game.Kingdom
@@ -20,10 +19,7 @@ data class ImmutablePlayerData (val hand: Hand = Hand(), val kingdom: Kingdom = 
 
     fun markRelicOfPast(card: Card) = copy(kingdom = kingdom.mark(card))
 
-    fun destroyKingdomCard(card: Card): ImmutablePlayerData {
-        println("removing card $card from kingdom $kingdom => ${kingdom.remove(card)}")
-        return copy(kingdom = kingdom.remove(card))
-    }
+    fun destroyKingdomCard(card: Card): ImmutablePlayerData = copy(kingdom = kingdom.remove(card))
 
     fun takeCardsFromKingdomToHand() = copy(kingdom = Kingdom(kingdom.marked().toSet()), hand = Hand(kingdom.unmarked().map { it.card }.toSet()))
 }
@@ -56,8 +52,11 @@ data class GameState(
             return this
         }
 
+
+        println(player1)
+        println(player2)
         return copy(player1 = player1.deal(dealer.deal()), player2 = player2.deal(dealer.deal()))
-                .deal(dealer) // end recursive until every player has 5 cards on his hand
+                .deal(dealer) // recursive call until every player has 5 cards on his hand
     }
 
     fun swapHands() = copy(player1 = player1.replaceHand(player2.hand), player2 = player2.replaceHand(player1.hand))
