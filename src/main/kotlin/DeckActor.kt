@@ -30,13 +30,11 @@ data class ImmutableDeck(val cards: List<Card>) {
 infix fun ImmutableDeck.readOnly(command: (ImmutableDeck) -> Unit): ImmutableDeck {
   command(this)
   return this
-
 }
 
 @ObsoleteCoroutinesApi
 @ExperimentalCoroutinesApi
 fun createDeck(cards: List<Card> = Card.shuffled(), shuffle: Boolean = false): DeckRef = GlobalScope.actor {
-
   var deck = ImmutableDeck(if (shuffle) cards.shuffled() else cards)
 
   for (msg in channel) {
