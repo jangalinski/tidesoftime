@@ -21,12 +21,13 @@ fun main() = runBlocking<Unit> {
 
   val game = game(p1,p2)
 
+  PlayerMessage.PlayerStateQuery.sendTo(p2).await().let{ println("p2: $it") }
 
   game.send(GameMessage.PlayRound)
 
 
   delay(2000)
-  with(game(p1, p2)) {
+  with(game) {
     send(GameMessage.PlayRound)
 
     GameMessage.GameStateQuery.sendTo(this).invokeOnCompletion { println("gamestate: $it") }

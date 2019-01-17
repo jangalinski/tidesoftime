@@ -35,7 +35,6 @@ enum class Card(
     val feature: CardFeature
 ) {
 
-
   // PER SYMBOL (5)
   DAS_BAD_DER_GOETTER(Forest, PointsPerSymbol(symbol = Tower)),
   DER_VORHOF(Hand, PointsPerSymbol(symbol = Crown)),

@@ -3,6 +3,7 @@ package com.github.jangalinski.tidesoftime.playground
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.runBlocking
 
 
@@ -21,12 +22,13 @@ sealed class Message {
 }
 
 
+
 fun main() = runBlocking {
 
   fun createPlayer(name: String, initialState: String = name): PlayerActor = actor {
     var player = Player(name, initialState)
 
-    for (msg in channel) when (msg) {
+    consumeEach { msg -> when (msg) {
 
       is Message.SwapCase -> when (msg) {
         is Message.SwapCase.Init -> with(CompletableDeferred<String>()) {
@@ -42,7 +44,7 @@ fun main() = runBlocking {
 
       is Message.GetPlayer -> msg.deferred.complete(player)
     }
-  }
+  }}
 
 
   val p1 = createPlayer("p1", "foo")

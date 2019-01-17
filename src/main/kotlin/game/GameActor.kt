@@ -29,6 +29,16 @@ sealed class GameMessage {
   }
 }
 
+suspend fun GameActor.sendGameStateQuery(): CompletableDeferred<GameState> {
+  val deferred = CompletableDeferred<GameState>()
+
+  this.send(GameMessage.GameStateQuery(deferred))
+
+  return deferred
+}
+
+//fun <M,R> SendChannel<M>.sendQuery() : CompletableDeferred<R> =
+
 data class GameState(
     val deck: Deck,
     val handPlayer1: Hand = Hand(), val kingdomPlayer1: Kingdom = Kingdom(),
