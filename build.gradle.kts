@@ -12,8 +12,8 @@ dependencies {
   compile(kotlin("stdlib-jdk8"))
   compile(kotlin("reflect"))
 
-  compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1")
-  compile("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:1.0.1")
+  compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.0")
+  compile("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:1.1.0")
 
   testCompile("org.junit.jupiter:junit-jupiter-api:5.3.1")
   testCompile("org.junit.jupiter:junit-jupiter-params:5.3.1")

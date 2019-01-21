@@ -1,11 +1,10 @@
 package com.github.jangalinski.tidesoftime.player
 
 import com.github.jangalinski.tidesoftime.Card
-import com.github.jangalinski.tidesoftime.Player
+import com.github.jangalinski.tidesoftime.game.GameStateView
 import com.github.jangalinski.tidesoftime.game.Hand
 import com.github.jangalinski.tidesoftime.game.Kingdom
 import com.github.jangalinski.tidesoftime.player.PlayerMessage.*
-import game.GameStateView
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.ObsoleteCoroutinesApi

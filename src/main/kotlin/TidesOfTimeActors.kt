@@ -1,13 +1,13 @@
 package com.github.jangalinski.tidesoftime
 
 import com.github.jangalinski.tidesoftime.game.*
-import com.github.jangalinski.tidesoftime.player.PlayerMessage
 import com.github.jangalinski.tidesoftime.player.RandomCardSelection
 import com.github.jangalinski.tidesoftime.player.getState
 import com.github.jangalinski.tidesoftime.player.player
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.consumeEach
-import kotlin.math.round
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.runBlocking
 
 
 typealias GameScope = CoroutineScope
@@ -50,6 +50,5 @@ fun main() = runBlocking {
     //close()
   }
 
-  p1.getState().await().let { println("p1 $it") }
-  p2.getState().await().let { println("p2 $it") }
+  listOf(p1, p2).map { it.getState() }.forEachIndexed { index, state -> println("p${index + 1} ${state.await()}") }
 }

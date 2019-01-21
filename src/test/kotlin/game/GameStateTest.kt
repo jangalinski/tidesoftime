@@ -1,8 +1,7 @@
-package game
+package com.github.jangalinski.tidesoftime.game
 
 import com.github.jangalinski.tidesoftime.Card
 import com.github.jangalinski.tidesoftime.createDeck
-import com.github.jangalinski.tidesoftime.game.Hand
 import com.github.jangalinski.tidesoftime.remainingCards
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi

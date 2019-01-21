@@ -6,11 +6,7 @@ import com.github.jangalinski.tidesoftime.player.PlayerActor
 import com.github.jangalinski.tidesoftime.player.chooseCardToPlay
 import com.github.jangalinski.tidesoftime.player.destroyKingdomCard
 import com.github.jangalinski.tidesoftime.player.markRelicOfPast
-import game.GameState
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 
@@ -29,9 +25,15 @@ suspend fun GameActor.countPoints() = this.send(GameMessage.CountPoints)
 suspend fun GameActor.roundEnded() = this.send(GameMessage.RoundEnded)
 suspend fun GameActor.getState(): CompletableDeferred<GameState> = CompletableDeferred<GameState>().also { this.send(GameMessage.GameStateQuery(it)) }
 
-infix fun GameState.readOnly(command: (GameState) -> Any): GameState {
-  command(this)
+infix fun GameState.peek(command: suspend CoroutineScope.(GameState) -> Any): GameState {
+  val state = this
+  runBlocking { command(state) }
   return this
+}
+
+infix fun GameState.map(block: suspend CoroutineScope.(GameState) -> GameState): GameState {
+  val state = this
+  return runBlocking { block(state) }
 }
 
 @ObsoleteCoroutinesApi
@@ -43,9 +45,7 @@ fun game(
 
   var state = GameState()
 
-  val deck = Card.shuffled().toMutableList()
-
-  val deckRef = createDeck(deck)
+  val deckRef = createDeck(Card.shuffled())
 
   suspend fun cardToKingdom(state: GameState)= state.updatePlayer(
           player1.chooseCardToPlay(state.visibleForPlayer1).await().let(state.player1::playCard),
@@ -63,20 +63,20 @@ fun game(
   )
 
   for (msg in channel)
-    state = when (msg) {
-      is GameMessage.GameStateQuery -> state readOnly { msg.deferred.complete(it) }
+    state = with(state) {
+      when (msg) {
+        is GameMessage.GameStateQuery -> peek { msg.deferred.complete(it) }
 
-      is GameMessage.PlayRound -> state.deal(deckRef)
+        is GameMessage.PlayRound -> map { it.deal(deckRef) }
 
-      is GameMessage.CardToKingdom -> state
-              .let{ cardToKingdom(it) }
-              .swapHands()
+        is GameMessage.CardToKingdom -> map { cardToKingdom(it) }
+                .map { it.swapHands() }
 
-      is GameMessage.RoundEnded -> state
-              .let { markRelicOfPast(it) }
-              .let { destroyKingdomCard(it) }
-              .takeCardsFromKingdomToHand()
+        is GameMessage.RoundEnded -> map { markRelicOfPast(it) }
+                .map { destroyKingdomCard(it) }
+                .map { it.takeCardsFromKingdomToHand() }
 
-      is GameMessage.CountPoints -> state.updateScore()
+        is GameMessage.CountPoints -> map { it.updateScore() }
+      }
     }
 }

@@ -1,11 +1,8 @@
-package game
+package com.github.jangalinski.tidesoftime.game
 
 import com.github.jangalinski.tidesoftime.Card
 import com.github.jangalinski.tidesoftime.DeckMessage
 import com.github.jangalinski.tidesoftime.deal
-import com.github.jangalinski.tidesoftime.game.Hand
-import com.github.jangalinski.tidesoftime.game.Kingdom
-import com.github.jangalinski.tidesoftime.game.countPoints
 import kotlinx.coroutines.channels.SendChannel
 
 typealias Score = Pair<Int, Int>
