@@ -3,7 +3,9 @@ package com.github.jangalinski.tidesoftime.game
 import com.github.jangalinski.tidesoftime.Card
 import com.github.jangalinski.tidesoftime.DeckMessage
 import com.github.jangalinski.tidesoftime.deal
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.runBlocking
 
 typealias Score = Pair<Int, Int>
 
@@ -19,6 +21,17 @@ data class ImmutablePlayerData (val hand: Hand = Hand(), val kingdom: Kingdom = 
     fun destroyKingdomCard(card: Card): ImmutablePlayerData = copy(kingdom = kingdom.remove(card))
 
     fun takeCardsFromKingdomToHand() = copy(kingdom = Kingdom(kingdom.marked().toSet()), hand = Hand(kingdom.unmarked().map { it.card }.toSet()))
+}
+
+infix fun GameState.peek(command: suspend CoroutineScope.(GameState) -> Any): GameState {
+    val state = this
+    runBlocking { command(state) }
+    return this
+}
+
+infix fun GameState.map(block: suspend CoroutineScope.(GameState) -> GameState): GameState {
+    val state = this
+    return runBlocking { block(state) }
 }
 
 data class GameStateView(

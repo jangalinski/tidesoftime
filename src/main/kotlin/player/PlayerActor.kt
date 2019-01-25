@@ -45,21 +45,21 @@ fun player(
     is PlayerStateQuery -> msg.deferred.complete(state)
 
     is ChooseCardToPlay -> {
-      val cardToPlay = strategy.playHandCard(msg.gameState.own.hand)
-      println("${msg.gameState.own.hand.size}: $name plays $cardToPlay")
-      msg.cardToPlay.complete(cardToPlay)
+      strategy.playHandCard(msg.gameState.own.hand)
+              .also { println("${msg.gameState.own.hand.size}: $name plays $it") }
+              .also { msg.cardToPlay.complete(it) }
     }
 
     is MarkRelicOfPast -> {
-      val markedKingdomCard = strategy.keepKingdomCard(msg.gameState.own.kingdom)
-      println("$name marks $markedKingdomCard as relic of the past")
-      msg.markedKingdomCard.complete(markedKingdomCard)
+      strategy.keepKingdomCard(msg.gameState.own.kingdom)
+              .also { println("$name marks $it as relic of the past") }
+              .also { msg.markedKingdomCard.complete(it) }
     }
 
     is DestroyKingdomCard -> {
-      val markedKingdomCard = strategy.destroyKingdomCard(msg.gameState.own.kingdom)
-      println("$name destroys $markedKingdomCard from his kingdom")
-      msg.discardedCard.complete(markedKingdomCard)
+      strategy.destroyKingdomCard(msg.gameState.own.kingdom)
+              .also { println("$name destroys $it from his kingdom") }
+              .also { msg.discardedCard.complete(it) }
     }
   }
 }

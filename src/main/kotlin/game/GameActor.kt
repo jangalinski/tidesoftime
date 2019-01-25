@@ -6,9 +6,13 @@ import com.github.jangalinski.tidesoftime.player.PlayerActor
 import com.github.jangalinski.tidesoftime.player.chooseCardToPlay
 import com.github.jangalinski.tidesoftime.player.destroyKingdomCard
 import com.github.jangalinski.tidesoftime.player.markRelicOfPast
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.channels.consumeEach
 
 sealed class GameMessage {
   object CardToKingdom : GameMessage()
@@ -24,17 +28,6 @@ suspend fun GameActor.playRound()  = this.send(GameMessage.PlayRound)
 suspend fun GameActor.countPoints() = this.send(GameMessage.CountPoints)
 suspend fun GameActor.roundEnded() = this.send(GameMessage.RoundEnded)
 suspend fun GameActor.getState(): CompletableDeferred<GameState> = CompletableDeferred<GameState>().also { this.send(GameMessage.GameStateQuery(it)) }
-
-infix fun GameState.peek(command: suspend CoroutineScope.(GameState) -> Any): GameState {
-  val state = this
-  runBlocking { command(state) }
-  return this
-}
-
-infix fun GameState.map(block: suspend CoroutineScope.(GameState) -> GameState): GameState {
-  val state = this
-  return runBlocking { block(state) }
-}
 
 @ObsoleteCoroutinesApi
 @ExperimentalCoroutinesApi
@@ -62,7 +55,7 @@ fun game(
           player2.destroyKingdomCard(state.visibleForPlayer2).await().let(state.player2::destroyKingdomCard)
   )
 
-  for (msg in channel)
+  channel.consumeEach { msg ->
     state = with(state) {
       when (msg) {
         is GameMessage.GameStateQuery -> peek { msg.deferred.complete(it) }
@@ -79,4 +72,5 @@ fun game(
         is GameMessage.CountPoints -> map { it.updateScore() }
       }
     }
+  }
 }

@@ -14,10 +14,11 @@ sealed class DeckMessage {
   data class RemainingCards(val deferred: CompletableDeferred<List<Card>>) : DeckMessage()
 }
 
-typealias DeckRef = SendChannel<DeckMessage>
-suspend fun DeckRef.deal(): Card = CompletableDeferred<Card>().also { this.send(DeckMessage.DealCard(it)) }.await()
-suspend fun DeckRef.size(): Int = CompletableDeferred<Int>().also { this.send(DeckMessage.GetSize(it)) }.await()
-suspend fun DeckRef.remainingCards(): List<Card> = CompletableDeferred<List<Card>>().also { this.send(DeckMessage.RemainingCards(it)) }.await()
+typealias DeckActor = SendChannel<DeckMessage>
+
+suspend fun DeckActor.deal(): Card = CompletableDeferred<Card>().also { this.send(DeckMessage.DealCard(it)) }.await()
+suspend fun DeckActor.size(): Int = CompletableDeferred<Int>().also { this.send(DeckMessage.GetSize(it)) }.await()
+suspend fun DeckActor.remainingCards(): List<Card> = CompletableDeferred<List<Card>>().also { this.send(DeckMessage.RemainingCards(it)) }.await()
 
 data class ImmutableDeck(val cards: List<Card>) {
   val size = cards.size
@@ -34,7 +35,7 @@ infix fun ImmutableDeck.readOnly(command: (ImmutableDeck) -> Unit): ImmutableDec
 
 @ObsoleteCoroutinesApi
 @ExperimentalCoroutinesApi
-fun createDeck(cards: List<Card> = Card.shuffled(), shuffle: Boolean = false): DeckRef = GlobalScope.actor {
+fun createDeck(cards: List<Card> = Card.shuffled(), shuffle: Boolean = false): DeckActor = GlobalScope.actor {
   var deck = ImmutableDeck(if (shuffle) cards.shuffled() else cards)
 
   for (msg in channel) {

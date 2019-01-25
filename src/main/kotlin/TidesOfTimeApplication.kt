@@ -1,6 +1,7 @@
 package com.github.jangalinski.tidesoftime
 
 import com.github.jangalinski.tidesoftime.game.Game
+import kotlin.system.measureTimeMillis
 
 
 fun main() {
@@ -10,27 +11,30 @@ fun main() {
   )
   println("new game begins: $game")
 // round 1
-  game.deal(5)
+  val time = measureTimeMillis {
+    game.deal(5)
 
-  println("dealt: $game")
-  game.takeTurns()
-  game.countPoints()
-  game.discard()
-  game.keep()
+    println("dealt: $game")
+    game.takeTurns()
+    game.countPoints()
+    game.discard()
+    game.keep()
 
 // round 2
-  game.takeCardsBack()
-  game.deal(2)
+    game.takeCardsBack()
+    game.deal(2)
 
-  game.takeTurns()
-  game.countPoints()
-  game.discard()
-  game.keep()
+    game.takeTurns()
+    game.countPoints()
+    game.discard()
+    game.keep()
 
 // round 3
-  game.takeCardsBack()
-  game.deal(2)
+    game.takeCardsBack()
+    game.deal(2)
 
-  game.takeTurns()
-  game.countPoints()
+    game.takeTurns()
+    game.countPoints()
+  }
+  println("it took $time ms")
 }
