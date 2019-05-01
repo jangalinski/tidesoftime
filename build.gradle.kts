@@ -1,7 +1,8 @@
-
 plugins {
-    application
-    kotlin("jvm") version embeddedKotlinVersion
+  base
+  idea
+  application
+  kotlin("jvm") version embeddedKotlinVersion
 }
 
 application {
@@ -29,5 +30,5 @@ tasks.withType<Test> {
 }
 
 repositories {
-    jcenter()
+  jcenter()
 }
